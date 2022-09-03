@@ -1,0 +1,46 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type": "SoftwareSourceCode",
+    "license": "https://spdx.org/licenses/MIT",
+    "codeRepository": "https://gitlab.inria.fr/egermani/transfer_decoding",
+    "dateCreated": "2022-09-03",
+    "datePublished": "2022-09-02",
+    "name": "transfer_decoding",
+    "applicationCategory": "Neuroimaging",
+    "programmingLanguage": [
+        "Python 3"
+    ],
+    "author": [
+        {
+            "@type": "Person",
+            "@id": "https://orcid.org/0000-0002-5786-9538",
+            "givenName": "Elodie",
+            "familyName": "Germani",
+            "email": "elodie.germani@irisa.fr",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Univ Rennes, Inria, CNRS, Inserm, Rennes, France"
+            }
+        },
+        {
+            "@type": "Person",
+            "givenName": "Elisa ",
+            "familyName": "Fromont",
+            "email": "elisa.fromont@irisa.fr",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Univ Rennes, IUF, Inria, CNRS, IRISA, Rennes, France"
+            }
+        },
+        {
+            "@type": "Person",
+            "givenName": "Camille",
+            "familyName": "Maumet",
+            "email": "camille.maumet@inria.fr",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Univ Rennes, Inria, CNRS, Inserm, Rennes, France"
+            }
+        }
+    ]
+}
