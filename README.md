@@ -60,6 +60,9 @@ This script will install all the necessary packages to reproduce this analysis.
 At each step, you might have to answer y/n, answer yes any time to properly do the install. 
 
 ### Download necessary data 
+
+First, download the files and results stored in Zenodo. To launch the notebooks, you first need to download these derived data [here](https://doi.org/10.5281/zenodo.7046056).
+
 Using the notebook `src/download_and_preprocess_data_notebook.ipynb`, necessary data will be downloaded and preprocessed. 
 
 ### Table 1
