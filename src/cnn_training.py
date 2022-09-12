@@ -98,18 +98,6 @@ if __name__ == "__main__":
                         opj(out_dir, f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"), 
                         epochs, batch_size, lr)
 
-        elif retrain == 'all_kfold':
-            pretrained_dict = opj(out_dir, f'neurovault_dataset_maps_{preprocess_type}_global_set_epochs_200_batch_size_32_{model_to_use}_lr_1e-04',
-                'model_final.pt')
-            cnn_trainer.finetuning_with_cv(pretrained_dict, model_to_use, train_set, valid_set, opj(out_dir, 
-                        f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_{retrain}_validation_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"),
-                        epochs, batch_size, lr)
-
-        elif retrain == 'kfold':
-            cnn_trainer.training_with_cv(model_to_use, train_set, valid_set, opj(out_dir, 
-                        f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_no_validation_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"),
-                        epochs, batch_size, lr)
-
         else: # normal training
             cnn_trainer.training(model_to_use, train_set, valid_set, opj(out_dir, 
                         f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"),
