@@ -2,27 +2,17 @@
 #OAR -E /srv/tempdd/egermani/Logs/job_%jobid%.error
 
 # Parameters
-expe_name="data_selection_neurovault"
-main_script=$HOME/Documents/transfer_decoding/src/cnn_training.py
+expe_name="cnn_training"
+main_script=$HOME/Documents/self_taught_decoding/src/cnn_training.py
 
-echo "Create dir for log"
-CURRENTDATE=`date +"%Y-%m-%d"`
-echo "currentDate :"
-echo $CURRENTDATE
-PATHLOG="/srv/tempdd/egermani/Logs/${CURRENTDATE}_OARID_${OAR_JOB_ID}/"
-echo "path log :"
-echo $PATHLOG
-mkdir $PATHLOG
-
-output_file=$PATHLOG/$OAR_JOB_ID.txt
-
-data_dir=/srv/tempdd/egermani/data_selection_neurovault/data/HCP
-out_dir=/srv/tempdd/egermani/transfer_decoding/results
+data_dir=$HOME/Documents/self_taught_decoding/data/preprocessed/HCP_dataset
+out_dir=$HOME/Documents/self_taught_decoding/data/derived
 preprocess_type=resampled_masked_normalized
-subset=hcp_global_subset_500
-model=model_cnn_hcp_task
-retrain=kfold
-repeatability=1
+subset=hcp_dataset_50
+model=model_cnn_4layers
+retrain=no
+classif=contrast
+valid=hp
 
 # The job
 # source .bashrc
@@ -34,13 +24,13 @@ conda activate workEnv
 
 # -u : Force les flux de sortie et d'erreur standards à ne pas utiliser de tampon. 
 # Cette option n'a pas d'effet sur le flux d'entrée standard
-for e in 500
+for e in 500 200
 do 
-	for b in 64
+	for b in 32 64
 	do
-		for l in 1e-4
+		for l in 1e-4 1e-5
 		do
-			python -u $main_script -d $data_dir -o $out_dir -e $e -b $b -p $preprocess_type -s $subset -m $model -l $l -r $retrain -R $repeatability >> $output_file
+			python -u $main_script -d $data_dir -o $out_dir -e $e -b $b -p $preprocess_type -s $subset -m $model -l $l -r $retrain -v $valid -c $classif 
 done
 done
 done

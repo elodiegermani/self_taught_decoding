@@ -33,11 +33,12 @@ if __name__ == "__main__":
     lr = None
     retrain = None
     classif = None
+    valid = None
 
 
     try:
-        OPTIONS, REMAINDER = getopt.getopt(sys.argv[1:], 'o:d:e:b:p:s:m:l:r:c:', ['out_dir=', 'data_dir=', 'epochs=', 'batch_size=', 
-            'preprocess_type=', 'subset=', 'model=', 'learning_rate=', 'retrain=', 'classif='])
+        OPTIONS, REMAINDER = getopt.getopt(sys.argv[1:], 'o:d:e:b:p:s:m:l:r:c:v:', ['out_dir=', 'data_dir=', 'epochs=', 'batch_size=', 
+            'preprocess_type=', 'subset=', 'model=', 'learning_rate=', 'retrain=', 'classif=', 'valid='])
 
     except getopt.GetoptError as err:
         print(err)
@@ -64,7 +65,9 @@ if __name__ == "__main__":
         elif opt in ('-r', '--retrain'):
             retrain = str(arg)
         elif opt in ('-c', '--classif'):
-            classif = str(arg)
+            classif = str(arg)  
+        elif opt in ('-v', '--valid'):
+            valid = str(arg)
 
     print('OPTIONS   :', OPTIONS)
 
@@ -72,34 +75,23 @@ if __name__ == "__main__":
     assert(type(batch_size)==int)
     assert(type(epochs)==int)
     assert(type(lr)==float)   
+    assert(valid == 'hp' or valid == 'perf')
     
-    if data_dir and out_dir and preprocess_type and subset and epochs and batch_size and model_to_use and lr and classif:
+    if data_dir and out_dir and preprocess_type and subset and epochs and batch_size and model_to_use and lr and classif and valid:
         str_lr = "{:.0e}".format(lr)
         package = 'lib.' + model_to_use
         md = importlib.import_module(package)
-
-        train_id_file = opj(data_dir, f'train_{subset}.txt')
-        valid_id_file = opj(data_dir, f'valid_{subset}.txt')
-        label_file = opj(data_dir, f'{subset}_labels.csv')
-
-        label_column = classif
-
-        train_set = datasets.ClassifDataset(opj(data_dir, preprocess_type), 
-                                          train_id_file, label_file, label_column)
-
-        valid_set = datasets.ClassifDataset(opj(data_dir, preprocess_type), 
-                                          valid_id_file, label_file, label_column)
 
         if retrain == 'all':
             pretrained_dict = opj(out_dir, f'neurovault_dataset_maps_{preprocess_type}_global_set_epochs_200_batch_size_32_{model_to_use}_lr_1e-04',
                 'model_final.pt')
 
-            cnn_trainer.finetuning(pretrained_dict, model_to_use, train_set, valid_set,
+            cnn_trainer.finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, classif, preprocess_type,
                         opj(out_dir, f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"), 
                         epochs, batch_size, lr)
 
         else: # normal training
-            cnn_trainer.training(model_to_use, train_set, valid_set, opj(out_dir, 
+            cnn_trainer.training(model_to_use, data_dir, subset, valid, classif, preprocess_type, opj(out_dir, 
                         f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"),
                         epochs, batch_size, lr)
 

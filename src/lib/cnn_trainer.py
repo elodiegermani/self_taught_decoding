@@ -79,7 +79,7 @@ def train(model, train_dataset, distance, optimizer, device):
     return mean_loss, acc
 
 def validate(model, valid_dataset, distance, device):
-        '''
+    '''
     Function to perform validation during training of the autoencoder. 
 
     Parameters:
@@ -126,7 +126,7 @@ def validate(model, valid_dataset, distance, device):
 
     return mean_loss, acc
 
-def training(model_to_use, train_subset, valid_subset, out_dir, epochs, batch_size, lr=1e-4):
+def training(model_to_use, data_dir, subset, valid, label_column, preprocess_type, out_dir, epochs, batch_size, lr=1e-4):
     '''
     Function to perform training FROM SCRATCH of the Classifier. 
 
@@ -166,46 +166,67 @@ def training(model_to_use, train_subset, valid_subset, out_dir, epochs, batch_si
         device = "cpu"
         print('Using CPU.')
 
-    n_class = len(train_subset.label_list)
+    for i in range(5):
 
-    model = md.Classifier3D(n_class)
+        print(f'Fold {i}')
 
-    print('Model:', model)
-    model = model.to(device)
-    print(f'Optimizer: ADAM, lr={lr}')
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)  
-    
-    outfname = op.join(out_dir, 'model')
+        train_id_file = opj(data_dir, f'train_{valid}_{subset}_fold_{i}.txt')
+        valid_id_file = opj(data_dir, f'test_{valid}_{subset}_fold_{i}.txt')
 
-    train_dataset = DataLoader(train_subset, batch_size=batch_size)
-    valid_dataset = DataLoader(valid_subset, batch_size=batch_size)
+        label_file = opj(data_dir, f'{subset}_labels.csv')
+        label_list = sorted(np.unique(pd.read_csv(label_file)[label_column]))
 
-    print('Start training...')
-    training_loss = []
-    validation_loss = []
+        train_subset = datasets.ClassifDataset(opj(data_dir, preprocess_type), 
+                                          train_id_file, label_file, label_column, label_list)
 
-    for epoch in range(epochs):
-        current_training_loss, acc = train(model, train_dataset, distance, optimizer, device)
-        training_loss.append(current_training_loss)
+        valid_subset = datasets.ClassifDataset(opj(data_dir, preprocess_type), 
+                                          valid_id_file, label_file, label_column, label_list)
 
-        current_validation_loss, acc = validate(model, valid_dataset, distance, device)
-        validation_loss.append(current_validation_loss)
+        print(f'Train: {len(train_subset.data)}')
+        print(f'Test: {len(valid_subset.data)}')
 
-        print('Training loss:', current_training_loss)
-        print('Validation loss:', current_validation_loss)
+        n_class = len(train_subset.label_list)
 
-        print('')
-        print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, current_training_loss))
+        model = md.Classifier3D(n_class)
 
-        if device != 'cpu':
-            if device.type == 'cuda':
-                torch.cuda.empty_cache()
+        print('Model:', model)
+        model = model.to(device)
+        print(f'Optimizer: ADAM, lr={lr}')
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)  
+        
+        outfname = op.join(out_dir, 'model')
 
-    torch.save(model,  "{0}_final.pt".format(outfname))
+        train_dataset = DataLoader(train_subset, batch_size=batch_size)
+        valid_dataset = DataLoader(valid_subset, batch_size=batch_size)
+
+        print('Start training...')
+        training_loss = []
+        validation_loss = []
+
+        for epoch in range(epochs):
+            current_training_loss, acc = train(model, train_dataset, distance, optimizer, device)
+            training_loss.append(current_training_loss)
+
+            current_validation_loss, acc = validate(model, valid_dataset, distance, device)
+            validation_loss.append(current_validation_loss)
+
+            print('Training loss:', current_training_loss)
+            print('Validation loss:', current_validation_loss)
+            print('Validation accuracy:', acc)
+
+            print('')
+            print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1, epochs, current_training_loss))
+
+            if device != 'cpu':
+                if device.type == 'cuda':
+                    torch.cuda.empty_cache()
+
+        print('Final accuracy:', acc)
+        torch.save(model,  f"{outfname}_fold_{i}.pt")
 
     print('Training ended')
 
-def finetuning(pretrained_dict, model_to_use, train_subset, valid_subset, out_dir, epochs, batch_size, lr=1e-4):
+def finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, label_column, preprocess_type, out_dir, epochs, batch_size, lr=1e-4):
     '''
     Function to perform training WITH FINETUNING of the Classifier. 
 
@@ -245,65 +266,85 @@ def finetuning(pretrained_dict, model_to_use, train_subset, valid_subset, out_di
     else:
         device = "cpu"
         
-    train_dataset = DataLoader(train_subset, batch_size=batch_size)
-    valid_dataset = DataLoader(valid_subset, batch_size=batch_size)
+    for i in range(5):
 
-    pretrained_model = torch.load(pretrained_dict, map_location=device)
-    pretrained_model = pretrained_model.state_dict()
+        print(f'Fold {i}')
 
-    # Initialize the model with the pre-trained weights
-    model = md.Encoder3D()
-    
-    model_dict = model.state_dict()
-    # 1. filter out unnecessary keys
-    pretrained_model = {k: v for k, v in pretrained_model.items() if k in model_dict}
-    # 2. overwrite entries in the existing state dict
-    model_dict.update(pretrained_model) 
-    # 3. load the new state dict
-    model.load_state_dict(pretrained_model)
+        train_id_file = opj(data_dir, f'train_{valid}_{subset}_fold_{i}.txt')
+        valid_id_file = opj(data_dir, f'test_{valid}_{subset}_fold_{i}.txt')
 
-    n_class = len(np.unique(train_subset.label_list))
+        label_file = opj(data_dir, f'{subset}_labels.csv')
+        label_list = sorted(np.unique(pd.read_csv(label_file)[label_column]))
 
+        train_subset = datasets.ClassifDataset(opj(data_dir, preprocess_type), 
+                                          train_id_file, label_file, label_column, label_list)
 
-    # Add layers corresponding to the correct architecture and classification
-    if isinstance(model, model_cnn_5layers.Encoder3D):
-        out_feature = 4096
-        model.deconv5 = nn.Sequential(
-                nn.Flatten(start_dim=1),
-                nn.Linear(out_feature, n_class), 
-                nn.Softmax())
-    else:
-        out_feature = 512*3*4*3
-        model.deconv4 = nn.Sequential(
-                nn.Flatten(start_dim=1),
-                nn.Linear(out_feature, n_class), 
-                nn.Softmax())
-    
-    model = model.to(device)
-    
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr) 
+        valid_subset = datasets.ClassifDataset(opj(data_dir, preprocess_type), 
+                                          valid_id_file, label_file, label_column, label_list)
+
+        print(f'Train: {len(train_subset.data)}')
+        print(f'Test: {len(valid_subset.data)}')
+
+        train_dataset = DataLoader(train_subset, batch_size=batch_size)
+        valid_dataset = DataLoader(valid_subset, batch_size=batch_size)
+
+        pretrained_model = torch.load(pretrained_dict, map_location=device)
+        pretrained_model = pretrained_model.state_dict()
+
+        # Initialize the model with the pre-trained weights
+        model = md.Encoder3D()
         
-    distance = nn.CrossEntropyLoss()
+        model_dict = model.state_dict()
+        # 1. filter out unnecessary keys
+        pretrained_model = {k: v for k, v in pretrained_model.items() if k in model_dict}
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(pretrained_model) 
+        # 3. load the new state dict
+        model.load_state_dict(pretrained_model)
+
+        n_class = len(np.unique(train_subset.label_list))
+
+
+        # Add layers corresponding to the correct architecture and classification
+        if isinstance(model, model_cnn_5layers.Encoder3D):
+            out_feature = 4096
+            model.deconv5 = nn.Sequential(
+                    nn.Flatten(start_dim=1),
+                    nn.Linear(out_feature, n_class), 
+                    nn.Softmax())
+        else:
+            out_feature = 512*3*4*3
+            model.deconv4 = nn.Sequential(
+                    nn.Flatten(start_dim=1),
+                    nn.Linear(out_feature, n_class), 
+                    nn.Softmax())
         
-    print('Start training...')
+        model = model.to(device)
+        
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr) 
+            
+        distance = nn.CrossEntropyLoss()
+            
+        print('Start training...')
 
-    for epoch in range(epochs):
-        current_training_loss, acc = train(model, train_dataset, distance, optimizer, device)
+        for epoch in range(epochs):
+            current_training_loss, acc = train(model, train_dataset, distance, optimizer, device)
 
-        current_validation_loss,acc = validate(model, valid_dataset, distance, device)
+            current_validation_loss,acc = validate(model, valid_dataset, distance, device)
 
-        print('Training loss:', current_training_loss)
-        print('Validation loss:', current_validation_loss)
+            print('Training loss:', current_training_loss)
+            print('Validation loss:', current_validation_loss)
+            print('Validation accuracy:', acc)
 
-        print('')
-        print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1,
-                                                  epochs, current_training_loss))
+            print('')
+            print('epoch [{}/{}], loss:{:.4f}'.format(epoch + 1,
+                                                      epochs, current_training_loss))
 
-        if device != 'cpu':
-            if device.type == 'cuda':
-                torch.cuda.empty_cache()
+            if device != 'cpu':
+                if device.type == 'cuda':
+                    torch.cuda.empty_cache()
 
-
-    torch.save(model,  "{0}_final.pt".format(outfname))    
+        print('Final accuracy:', acc)
+        torch.save(model,  f"{outfname}_fold_{i}.pt")   
 
     print('Training ended')
