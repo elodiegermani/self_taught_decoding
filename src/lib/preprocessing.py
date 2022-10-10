@@ -1,6 +1,7 @@
 from glob import glob
 from nilearn.image import resample_to_img, resample_img
-from nilearn import datasets
+from nilearn import datasets, plotting
+import matplotlib.pyplot as plt
 import nibabel as nib
 import numpy as np
 import os.path as op
@@ -49,11 +50,20 @@ def preprocessing(data_dir, output_dir):
         os.mkdir(op.join(output_dir, 'resampled_normalized'))
 
 
+    shapes = {1: (182, 218, 182),
+          2: (96, 112, 96),
+          3: (62, 74, 62),
+          4: (48, 56, 48)}
+
+
     # Load mask to apply to images    
-    mask = datasets.load_mni152_brain_mask(resolution=4, threshold=0.1)
-    mask_affine = mask.affine
-    mask_data= mask.get_fdata()[:48, :56, :48]
-    res_mask = nib.Nifti1Image(mask_data, mask_affine)
+    mask = datasets.load_mni152_brain_mask(resolution=2, threshold=0.1)
+
+    target_affine = datasets.load_mni152_brain_mask().affine.copy()
+    target_affine[:3,:3] = np.sign(target_affine[:3,:3]) * 2
+    target_shape = shapes[2]
+
+    res_mask = resample_img(mask, target_affine=target_affine, target_shape=target_shape, interpolation='nearest')
     
     for idx, img in enumerate(img_list):
         print('Image', img)
@@ -75,11 +85,7 @@ def preprocessing(data_dir, output_dir):
 
             print("Resampling image {0} of {1}...".format(idx + 1, len(img_list)))
             
-            res_img = resample_to_img(nib_img, datasets.load_mni152_template(resolution = 4), 
-                                      interpolation='nearest', clip = True)
-            res_img_affine = res_img.affine
-            res_img_data= res_img.get_fdata()[:48, :56, :48]
-            res_img = nib.Nifti1Image(res_img_data, res_img_affine)
+            res_img = resample_img(nib_img, target_affine=target_affine, target_shape=target_shape, interpolation='nearest')
 
             print('New shape for image', idx, res_img.shape)
 
@@ -92,7 +98,7 @@ def preprocessing(data_dir, output_dir):
             
             res_masked_img_data = res_img_data * res_mask_data
             
-            res_masked_img = nib.Nifti1Image(res_masked_img_data, res_img_affine)
+            res_masked_img = nib.Nifti1Image(res_masked_img_data, res_img.affine)
             
             nib.save(res_masked_img, op.join(output_dir,'resampled_masked', op.basename(img))) # Save original image resampled and masked
 
@@ -102,7 +108,7 @@ def preprocessing(data_dir, output_dir):
             res_norm_img_data = np.nan_to_num(res_norm_img_data)
             res_norm_img_data *= 1.0/np.abs(res_norm_img_data).max()
 
-            res_norm_img = nib.Nifti1Image(res_norm_img_data, res_img_affine)
+            res_norm_img = nib.Nifti1Image(res_norm_img_data, res_img.affine)
             
             nib.save(res_norm_img, op.join(output_dir, 'resampled_normalized', op.basename(img))) # Save original image resampled and normalized
 
@@ -112,7 +118,7 @@ def preprocessing(data_dir, output_dir):
             res_masked_norm_img_data = np.nan_to_num(res_masked_norm_img_data)
             res_masked_norm_img_data *= 1.0/np.abs(res_masked_norm_img_data).max()
 
-            res_masked_norm_img = nib.Nifti1Image(res_masked_norm_img_data, res_img_affine)
+            res_masked_norm_img = nib.Nifti1Image(res_masked_norm_img_data, res_img.affine)
             
             nib.save(res_masked_norm_img, op.join(output_dir, 'resampled_masked_normalized', op.basename(img))) # Save original image resampled, masked and normalized
 

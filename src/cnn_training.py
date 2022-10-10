@@ -83,16 +83,16 @@ if __name__ == "__main__":
         md = importlib.import_module(package)
 
         if retrain == 'all':
-            pretrained_dict = opj(out_dir, f'neurovault_dataset_maps_{preprocess_type}_global_set_epochs_200_batch_size_32_{model_to_use}_lr_1e-04',
+            pretrained_dict = opj('/srv/tempdd/egermani/self_taught_decoding/data/derived/NeuroVault_dataset', f'neurovault_dataset_maps_{preprocess_type}_neurovault_dataset_epochs_200_batch_size_32_{model_to_use}_lr_1e-04',
                 'model_final.pt')
 
             cnn_trainer.finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, classif, preprocess_type,
-                        opj(out_dir, f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"), 
+                        opj(out_dir, f"{subset}_maps_classification_{classif}_{model_to_use}_valid_{valid}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"), 
                         epochs, batch_size, lr)
 
         else: # normal training
             cnn_trainer.training(model_to_use, data_dir, subset, valid, classif, preprocess_type, opj(out_dir, 
-                        f"{subset}_maps_classification_{classif}_{model_to_use}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"),
+                        f"{subset}_maps_classification_{classif}_{model_to_use}_valid_{valid}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"),
                         epochs, batch_size, lr)
 
 

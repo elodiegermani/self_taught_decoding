@@ -221,6 +221,9 @@ def training(model_to_use, data_dir, subset, valid, label_column, preprocess_typ
                 if device.type == 'cuda':
                     torch.cuda.empty_cache()
 
+            if epoch%100==0:
+                torch.save(model,  f"{outfname}_epochs_{epoch}_fold_{i}.pt") 
+
         print('Final accuracy:', acc)
         torch.save(model,  f"{outfname}_fold_{i}.pt")
 
@@ -344,7 +347,11 @@ def finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, label_col
                 if device.type == 'cuda':
                     torch.cuda.empty_cache()
 
+            if epoch%100==0:
+                torch.save(model,  f"{outfname}_epochs_{epoch}_fold_{i}.pt")   
+
+
         print('Final accuracy:', acc)
-        torch.save(model,  f"{outfname}_fold_{i}.pt")   
+        torch.save(model,  f"{outfname}_final_fold_{i}.pt")   
 
     print('Training ended')
