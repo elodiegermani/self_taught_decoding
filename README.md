@@ -6,8 +6,8 @@ We study the benefits of using a large public neuroimaging database composed of 
    * [How to cite?](#how-to-cite)
    * [Contents overview](#contents-overview)
    * [Reproducing figures and tables](#reproducing-figures-and-tables)
-      * [Installing environment](#environment)
-      * [Download necessary data](#download-data)
+      * [Installing environment](#installing-environment)
+      * [Download necessary data](#download-necessary-data)
       * [Table 1](#table-1)
       * [Table 2](#table-2)
       * [Figure 3](#fig-3)
@@ -20,23 +20,23 @@ We study the benefits of using a large public neuroimaging database composed of 
 ## How to cite?
 
 
-# Contents overview
+## Contents overview
 
 
-## `src`
+### `src`
 
 This directory contains scripts and notebooks used to launch the full analysis. 
 Two notebooks (`dataset_selection_notebook.ipynb` and `download_and_preprocess_data_notebook.ipynb`) contains the functions used to treat NeuroVault metadata, select necessary data, download and preprocess them.
 
-## `data`
+### `data`
 
-This directory is made to contain data that will be used by scripts/notebooks stored in the `src` directory and to contain results of those scripts. 
+This directory is made to contain data that will be used by scripts/notebooks stored in the `src` directory and to contain results of those scripts. For details, check [here](#download-necessary-data).
 
-## `results`
+### `results`
 
 This directory contains notebooks and scripts that were used to analyze the results of the experiments. These notebooks were used to evaluate the performance of autoencoders and classifiers and to compare these performance in different settings. 
 
-## `figures`
+### `figures`
 
 This directory contains figures and csv files obtained when running the notebooks in the `results` directory.
 
@@ -61,9 +61,11 @@ At each step, you might have to answer y/n, answer yes any time to properly do t
 
 ### Download necessary data 
 
-First, download the files and results stored in Zenodo. To launch the notebooks, you first need to download these derived data [here](https://doi.org/10.5281/zenodo.7046056).
+First, download the files and results stored in Zenodo. To launch the notebooks, you first need to download these derived data [here](https://doi.org/10.5281/zenodo.7046056) and unzip the file in the root of this directory so these derived data compose the `data` directory of this repository.
 
-Using the notebook `src/download_and_preprocess_data_notebook.ipynb`, necessary data will be downloaded and preprocessed. 
+Details on data available in this directory are available in the `data/README.md` file in Zenodo.
+
+Using the notebook `src/download_and_preprocess_data_notebook.ipynb`, other necessary data (statistic maps from NeuroVault) will be downloaded and preprocessed. This step might take some time. 
 
 ### Table 1
 **Overview of the datasets. For each dataset, number of statistic maps are presented, as well as the number of subjects, number of studies and the type of labels (if available).**
@@ -75,7 +77,7 @@ jupyter notebook src/dataset_selection_notebook.ipynb
 ```
 
 In this notebook, the different datasets are selected and split in train/test/valid if necessary. 
-Since the selection is randomised for some datasets, we recommand to keep the files stored in the `data` repository and to launch the notebook. The corresponding values will be printed at each step.
+Since the selection is randomised for some datasets, we recommand to keep the files stored in the `data` repository (that were downloaded with derived data) and to launch the notebook. The corresponding values will be printed at each step.
 
 ### Table 2
 **Reconstruction performance of the CAE depending on model architecture and training set. Values are the mean Pearson's correlation coefficients (standard error of the mean).**
