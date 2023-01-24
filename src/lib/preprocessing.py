@@ -60,8 +60,8 @@ def preprocessing(data_dir, output_dir):
     mask = datasets.load_mni152_brain_mask(resolution=2, threshold=0.1)
 
     target_affine = datasets.load_mni152_brain_mask().affine.copy()
-    target_affine[:3,:3] = np.sign(target_affine[:3,:3]) * 2
-    target_shape = shapes[2]
+    target_affine[:3,:3] = np.sign(target_affine[:3,:3]) * 4
+    target_shape = shapes[4]
 
     res_mask = resample_img(mask, target_affine=target_affine, target_shape=target_shape, interpolation='nearest')
     

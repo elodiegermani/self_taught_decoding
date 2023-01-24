@@ -34,11 +34,13 @@ if __name__ == "__main__":
     retrain = None
     classif = None
     valid = None
+    frozen_layers=None
+    transfered_layers=[]
 
 
     try:
-        OPTIONS, REMAINDER = getopt.getopt(sys.argv[1:], 'o:d:e:b:p:s:m:l:r:c:v:', ['out_dir=', 'data_dir=', 'epochs=', 'batch_size=', 
-            'preprocess_type=', 'subset=', 'model=', 'learning_rate=', 'retrain=', 'classif=', 'valid='])
+        OPTIONS, REMAINDER = getopt.getopt(sys.argv[1:], 'o:d:e:b:p:s:m:l:r:c:v:f:t:', ['out_dir=', 'data_dir=', 'epochs=', 'batch_size=', 
+            'preprocess_type=', 'subset=', 'model=', 'learning_rate=', 'retrain=', 'classif=', 'valid=','frozen_layers=', 'transfered_layers='])
 
     except getopt.GetoptError as err:
         print(err)
@@ -68,6 +70,10 @@ if __name__ == "__main__":
             classif = str(arg)  
         elif opt in ('-v', '--valid'):
             valid = str(arg)
+        elif opt in ('-f', '--frozen_layers'):
+            frozen_layers = str(arg)
+        elif opt in ('-t', '--transfered_layers'):
+            transfered_layers = json.loads(arg)
 
     print('OPTIONS   :', OPTIONS)
 
@@ -87,8 +93,8 @@ if __name__ == "__main__":
                 'model_final.pt')
 
             cnn_trainer.finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, classif, preprocess_type,
-                        opj(out_dir, f"{subset}_maps_classification_{classif}_{model_to_use}_valid_{valid}_retrain_{retrain}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"), 
-                        epochs, batch_size, lr)
+                        opj(out_dir, f"{subset}_maps_classification_{classif}_{model_to_use}_valid_{valid}_retrain_{retrain}_frozen_{frozen_layers}_transfered_{len(transfered_layers)}_{preprocess_type}_epochs_{epochs}_batch_size_{batch_size}_lr_{str_lr}"), 
+                        epochs, batch_size, frozen_layers, transfered_layers, lr)
 
         else: # normal training
             cnn_trainer.training(model_to_use, data_dir, subset, valid, classif, preprocess_type, opj(out_dir, 

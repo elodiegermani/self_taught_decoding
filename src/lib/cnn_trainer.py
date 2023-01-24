@@ -19,7 +19,7 @@ from torch.utils.data import Dataset, DataLoader,TensorDataset,random_split,Subs
 from sklearn.model_selection import KFold
 
 
-def train(model, train_dataset, distance, optimizer, device):
+def train(model, train_dataset, distance, optimizer, device, frozen_layers=0):
     '''
     Function to perform training of the CNN. 
 
@@ -38,6 +38,12 @@ def train(model, train_dataset, distance, optimizer, device):
     total_preds = []
     total_labels = []
     with torch.set_grad_enabled(True):
+        for l, (name, layers) in enumerate(model.named_parameters()):
+            if int(frozen_layers) > 0 and l < int(frozen_layers) * 4:
+                layers.requires_grad=False
+                print(name)
+                print(layers.requires_grad)
+
         loss_total = 0
 
         for idx, data in enumerate(train_dataset):
@@ -229,7 +235,15 @@ def training(model_to_use, data_dir, subset, valid, label_column, preprocess_typ
 
     print('Training ended')
 
-def finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, label_column, preprocess_type, out_dir, epochs, batch_size, lr=1e-4):
+def weights_init_normal(m):
+    classname = m.__class__.__name__
+    if classname.find("Conv") != -1:
+        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find("BatchNorm3d") != -1:
+        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
+        torch.nn.init.constant_(m.bias.data, 0.0)
+
+def finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, label_column, preprocess_type, out_dir, epochs, batch_size, frozen_layers=4, transfered_layers=range(20), lr=1e-4):
     '''
     Function to perform training WITH FINETUNING of the Classifier. 
 
@@ -299,11 +313,11 @@ def finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, label_col
         
         model_dict = model.state_dict()
         # 1. filter out unnecessary keys
-        pretrained_model = {k: v for k, v in pretrained_model.items() if k in model_dict}
+        pretrained_model = {k: v for k, v in pretrained_model.items() if k in model_dict and k in [list(pretrained_model.keys())[i] for i in transfered_layers]}
         # 2. overwrite entries in the existing state dict
         model_dict.update(pretrained_model) 
         # 3. load the new state dict
-        model.load_state_dict(pretrained_model)
+        model.load_state_dict(model_dict)
 
         n_class = len(np.unique(train_subset.label_list))
 
@@ -325,13 +339,13 @@ def finetuning(pretrained_dict, model_to_use, data_dir, subset, valid, label_col
         model = model.to(device)
         
         optimizer = torch.optim.Adam(model.parameters(), lr=lr) 
-            
+
         distance = nn.CrossEntropyLoss()
             
         print('Start training...')
 
         for epoch in range(epochs):
-            current_training_loss, acc = train(model, train_dataset, distance, optimizer, device)
+            current_training_loss, acc = train(model, train_dataset, distance, optimizer, device, frozen_layers)
 
             current_validation_loss,acc = validate(model, valid_dataset, distance, device)
 

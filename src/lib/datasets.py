@@ -92,7 +92,7 @@ class ClassifDataset(Dataset):
         assert(N == len(id_list))
 
         self.data = file_list
-        self.ids = sorted(id_list)
+        self.ids = id_list
         self.labels = []
         self.classe = label_column
         self.subject = []
